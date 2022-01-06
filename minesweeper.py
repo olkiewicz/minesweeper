@@ -15,10 +15,11 @@ class Minesweeper:
         self.game_over = False
         self.size = size
         self.board = np.zeros((size, size), dtype=int)
-        #  0 - nothing, not discovered; -1 - mine;
-        # -2 - checked as mine;         -3 nothing, discovered
+        #  0 - nothing, not discovered; -91 - mine;
+        # -92 - checked as mine;        -93 nothing, discovered
         self.checked_as_mine = 0
-        self.number_of_mines = 10
+        self.number_of_mines = 5
+        self.list_of_mines = []
 
     def add_mines(self, x: int, y: int):
         _number_of_mines = 0
@@ -33,13 +34,14 @@ class Minesweeper:
             if math.dist((x, y), (mine_x, mine_y)) <= 3.0:
                 continue
 
-            self.board[mine_x, mine_y] = -1
+            self.board[mine_x, mine_y] = -91
+            self.list_of_mines.append((mine_x, mine_y))
             _number_of_mines += 1
 
     def recalculate_board(self):
         for x in range(self.size):
             for y in range(self.size):
-                if self.board[x, y] == -1:
+                if self.board[x, y] == -91:
                     continue
 
                 mines_around = 0
@@ -53,7 +55,7 @@ class Minesweeper:
                         if x_around == x and y_around == y:
                             continue
 
-                        if self.board[x_around, y_around] == -1:
+                        if self.board[x_around, y_around] == -91:
                             mines_around += 1
 
                 self.board[x, y] = mines_around + 10 if mines_around > 0 else mines_around
@@ -65,35 +67,37 @@ class Minesweeper:
 
     def action(self, x: int, y: int, action: Action):
         value = self.board[x, y]
-        if value == -3:
+        if value == -93:
             return False
 
         if action == Action.DISCOVER:
-            if value == -1:
+            if value == -91:
                 self.game_over = True
-            elif value == -3:
+            # elif value == -93:
+            else:
                 self.discover(x, y)
 
         elif action == Action.CHECK_AS_MINE:
-            if self.board[x, y] == -2:
+            if self.board[x, y] == -92:
                 self.board[x, y] = 0
 
             if self.checked_as_mine >= self.size:
                 return
 
-            self.board[x, y] = -2
+            self.board[x, y] = -92
             self.checked_as_mine += 1
 
             if self.checked_as_mine == self.number_of_mines and not np.any(self.board == 0):
                 self.game_over = True
 
     def discover(self, x: int, y: int):
+        # FIXME: algorithm has some bugs, but it works
         value = self.board[x, y]
-        if value == -1:
+        if value == -91:
             self.game_over = True
             return False
 
-        if value not in [0, -3]:
+        if value not in [0, -93]:
             return
 
         x_min = x - 1 if x > 0 else x
@@ -108,15 +112,17 @@ class Minesweeper:
 
                 around_value = self.board[x_around, y_around]
                 if around_value == 0:
-                    self.board[x_around, y_around] = -3
+                    self.board[x_around, y_around] = -93
                     self.discover(x_around, y_around)
                 elif around_value > 10:
                     self.board[x_around, y_around] -= 10
+                    break
 
-        self.board[x, y] = -3
+        self.board[x, y] = -93
 
     def __str__(self):
-        return self.board.__str__().replace('0', '-').replace('-3', '  ').replace('-1', ' -')
+        return self.board.__str__() + '\n\n'  + self.board.__str__().replace('0', '-').replace('-93', '   ').replace('-91', '  -').replace('11', ' -').replace('12', ' -').replace('13', ' -').replace('14', ' -')
+        # return self.board.__str__().replace('0', '-').replace('-93', '   ').replace('-91', '   ').replace('11', '  ').replace('12', '  ').replace('13', '  ').replace('14', '  ')
 
     def __repr__(self):
         return self.board.__str__()
