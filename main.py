@@ -7,7 +7,7 @@ if __name__ == '__main__':
     action_x = int(input('Please enter x position of your next action:\n'))
     action_y = int(input('Please enter y position of your next action:\n'))
     print('Your first action is discovering.\n')
-    minesweeper.first_action(action_x, action_y)
+    minesweeper.first_action(action_y, action_x)
 
     while not minesweeper.game_over:
         print(minesweeper)
@@ -15,8 +15,11 @@ if __name__ == '__main__':
         action_y = int(input('Please enter y position of your next action:\n'))
 
         choice = int(input('Enter 1 for check as mine.\nEnter 2 for discover:\n'))
-        action = minesweeper.action(action_x, action_y, Action(choice))
+        action = minesweeper.action(action_y, action_x, Action(choice))
         if not action and choice == 2 and minesweeper.game_over:
             print('You lose!')
+        elif minesweeper.game_over:
+            print('You win!')
+        print(minesweeper)
 
 

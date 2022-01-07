@@ -31,7 +31,7 @@ class Minesweeper:
             mine_x = random.randint(0, self.size - 1)
             mine_y = random.randint(0, self.size - 1)
 
-            if math.dist((x, y), (mine_x, mine_y)) <= 3.0:
+            if math.dist((x, y), (mine_x, mine_y)) <= 3.0 or (mine_x, mine_y) in self.list_of_mines:
                 continue
 
             self.board[mine_x, mine_y] = -91
@@ -78,16 +78,24 @@ class Minesweeper:
                 self.discover(x, y)
 
         elif action == Action.CHECK_AS_MINE:
-            if self.board[x, y] == -92:
-                self.board[x, y] = 0
+            if 1 <= value <= 9:
+                return
+
+            if value == -92:
+                if (x, y) in self.list_of_mines:
+                    self.board[x, y] = -91
+                else:
+                    self.board[x, y] = 0
+                return
 
             if self.checked_as_mine >= self.size:
-                return
+                return False
 
             self.board[x, y] = -92
             self.checked_as_mine += 1
 
-            if self.checked_as_mine == self.number_of_mines and not np.any(self.board == 0):
+            if self.checked_as_mine == self.number_of_mines and not np.any(self.board == 0) and not np.any(self.board == -91):
+                # TODO: maybe we should check if all fields checked as mines are in list self.list_of_mines
                 self.game_over = True
 
     def discover(self, x: int, y: int):
@@ -97,7 +105,11 @@ class Minesweeper:
             self.game_over = True
             return False
 
-        if value not in [0, -93]:
+        if value not in [0, -93, 11, 12, 13, 14, 15, 16, 17, 18, 19]:
+            return
+
+        if 10 < value <= 19:
+            self.board[x, y] -= 10
             return
 
         x_min = x - 1 if x > 0 else x
@@ -121,7 +133,7 @@ class Minesweeper:
         self.board[x, y] = -93
 
     def __str__(self):
-        return self.board.__str__() + '\n\n'  + self.board.__str__().replace('0', '-').replace('-93', '   ').replace('-91', '  -').replace('11', ' -').replace('12', ' -').replace('13', ' -').replace('14', ' -')
+        return self.board.__str__() + '\n\n'  + self.board.__str__().replace('0', '-').replace('-93', '   ').replace('-91', '  -').replace('11', ' -').replace('12', ' -').replace('13', ' -').replace('14', ' -').replace('15', ' -').replace('-92', '  T')
         # return self.board.__str__().replace('0', '-').replace('-93', '   ').replace('-91', '   ').replace('11', '  ').replace('12', '  ').replace('13', '  ').replace('14', '  ')
 
     def __repr__(self):
