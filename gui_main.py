@@ -4,11 +4,13 @@ import threading
 import PyQt5
 from PyQt5 import QtGui
 from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal, QPoint, QEvent, QRect, QMetaObject, QCoreApplication, QSize
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QFont
 from PyQt5.QtWidgets import QStatusBar, QApplication, QMainWindow, QWidget, QGridLayout, QFrame, QLCDNumber, \
     QPushButton, QMenuBar
 
 import time
+
+from minesweeper_graphic import MinesweeperGraphic, ActionGraphic
 
 
 class MouseObserver(PyQt5.QtCore.QObject):
@@ -41,20 +43,25 @@ class UiMainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
+
+        self.tile_size = 50
+
+        self.thread: threading.Thread = None
+
         if not self.objectName():
             self.setObjectName(u"MainWindow")
 
-        self.resize(800, 800)
+        self.resize(700, 700)
         self.central_widget = QWidget(self)
         self.central_widget.setObjectName(u"centralwidget")
         self.gridLayoutWidget = QWidget(self.central_widget)
         self.gridLayoutWidget.setObjectName(u"gridLayoutWidget")
-        self.gridLayoutWidget.setGeometry(QRect(100, 100, 600, 600))
+        self.gridLayoutWidget.setGeometry(QRect(100, 100, 450, 450))
         self.gridLayout = QGridLayout(self.gridLayoutWidget)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.gridLayout.setSpacing(0)
-        self.gridLayout.setGeometry(QRect(0, 0, 600, 600))
+        self.gridLayout.setGeometry(QRect(0, 0, 450, 450))
         self.frame = QFrame(self.gridLayoutWidget)
         self.frame.setObjectName(u"frame")
         self.frame.setFrameShape(QFrame.StyledPanel)
@@ -68,9 +75,10 @@ class UiMainWindow(QMainWindow):
         self.time = QLCDNumber(self.central_widget)
         self.time.setObjectName(u"time")
         self.time.setGeometry(QRect(530, 50, 161, 41))
-        self.pushButton = QPushButton(self.central_widget)
-        self.pushButton.setObjectName(u"pushButton")
-        self.pushButton.setGeometry(QRect(350, 50, 111, 41))
+        self.reset_button = QPushButton(self.central_widget)
+        self.reset_button.setObjectName(u"reset_button")
+        self.reset_button.setGeometry(QRect(350, 50, 111, 41))
+        self.reset_button.clicked.connect(self.reset)
         self.setCentralWidget(self.central_widget)
         self.menubar = QMenuBar(self)
         self.menubar.setObjectName(u"menubar")
@@ -80,66 +88,171 @@ class UiMainWindow(QMainWindow):
         self.statusbar.setObjectName(u"statusbar")
         self.setStatusBar(self.statusbar)
 
+        self.checked_mine_icon = QIcon()
+        self.checked_mine_icon.addPixmap(QPixmap('checked_mine_icon.png'))
         self.mine_icon = QIcon()
         self.mine_icon.addPixmap(QPixmap('mine_icon.png'))
+        self.exploded_mine_icon = QIcon()
+        self.exploded_mine_icon.addPixmap(QPixmap('exploded_mine_icon.png'))
 
         self.retranslateUi(self)
 
         QMetaObject.connectSlotsByName(self)
 
         self.mines = []
-        i = 0
-        for x in range(6):
-            row = []
-            for y in range(6):
-                push_button = QPushButton()
-                push_button.setObjectName(f'[{x}][{y}]')
-                push_button.setFixedSize(100, 100)
-                push_button.clicked.connect(lambda state, z=x, t=y: self.on_click(z, t))
-                self.gridLayout.addWidget(push_button, x, y)
-                row.append(push_button)
-                i += 1
-            self.mines.append(row)
+        self.draw_field()
 
         self.time_start = -1
         self.timer_stop = False
+
+        self.first_action = True
+        self.game_engine = MinesweeperGraphic(9)
     # setupUi
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
-        self.pushButton.setText(QCoreApplication.translate("MainWindow", u"Start / Reset", None))
+        self.reset_button.setText(QCoreApplication.translate("MainWindow", u"Reset", None))
     # retranslateUi
 
-    def in_thread(self):
+    def draw_field(self):
+        for x in range(9):
+            row = []
+            for y in range(9):
+                push_button = QPushButton()
+                push_button.setObjectName(f'[{x}][{y}]')
+                push_button.setStyleSheet("background-color : #e8e8e8")
+                push_button.setFixedSize(self.tile_size, self.tile_size)
+                push_button.clicked.connect(lambda state, z=x, t=y: self.on_left_click(z, t))
+                self.gridLayout.addWidget(push_button, x, y)
+                row.append(push_button)
+            self.mines.append(row)
+
+    def timer(self):
         while not self.timer_stop and self.time_start < 1000:
+            if self.timer_stop:
+                break
+
             time.sleep(1)
             self.time_start += 1
             self.time.display(self.time_start)
 
-    def on_click(self, a, b):
-        self.mines[a][b].setStyleSheet("background-color : #bfbfbf")
-        self.mines[a][b].setText('')
-        self.mines[a][b].setIcon(self.mine_icon)
-        self.mines[a][b].setIconSize(QSize(30, 30))
-        print(a, b)
+    def on_left_click(self, a, b):
+        if self.first_action:
+            self.first_action = False
+            self.game_engine.first_action(a, b)
 
-        if self.time_start == -1:
-            self.time_start = 0
-            self.thread = threading.Thread(target=self.in_thread)
-            self.thread.start()
+            if self.thread is None:
+                self.thread = threading.Thread(target=self.timer)
+                self.time_start = 0
+                self.thread.start()
 
-    def handle_window_released(self, window_pos: QPoint, global_pos: QPoint):
-        x = (window_pos.x() - 100) // 100
-        y = (window_pos.y() - 100) // 100
-        print(f'handle_window_released: {x}, {y}')
+        elif self.game_engine.game_over:
+            return
 
-        if self.time_start == -1:
-            self.time_start = 0
-            self.thread = threading.Thread(target=self.in_thread)
-            self.thread.start()
+        else:
+            self.game_engine.action(a, b, ActionGraphic.DISCOVER)
+
+        self.handle_after_action(ActionGraphic.DISCOVER, a, b)
+
+    def on_right_click(self, window_pos: QPoint):
+        if self.first_action or self.game_engine.game_over:
+            return
+
+        y = (window_pos.x() - 100) // self.tile_size
+        x = (window_pos.y() - 100) // self.tile_size
+
+        if 0 <= x < 9 and 0 <= y < 9:
+            if self.game_engine.board[x, y] == -92:
+                self.game_engine.checked_as_mine -= 1
+
+                if (x, y) in self.game_engine.list_of_mines:
+                    self.game_engine.board[x, y] = -91
+
+                else:
+                    self.game_engine.board[x, y] = 0
+
+            else:
+                self.game_engine.action(x, y, ActionGraphic.CHECK_AS_MINE)
+
+        self.handle_after_action(ActionGraphic.CHECK_AS_MINE)
+
+    def paint_tile_as_discovered(self, x, y):
+        self.mines[x][y].setStyleSheet("background-color : #c8c8c8")
+
+    def paint_tile_as_checked(self, x, y):
+        self.mines[x][y].setText('')
+        self.mines[x][y].setIcon(self.checked_mine_icon)
+        self.mines[x][y].setIconSize(QSize(self.tile_size - 4, self.tile_size - 4))
+
+    def paint_tile_as_number(self, x, y, number: int):
+        self.mines[x][y].setStyleSheet("background-color : #c8c8c8")
+        font: QFont = self.mines[x][y].font()
+        # font.setPixelSize(font.pixelSize() * 12)
+        # todo: zmienic rozmiar
+        self.mines[x][y].setFont(font)
+        self.mines[x][y].setText(f'{number}')
+
+    def paint_default_tile(self, x: int, y: int):
+        self.mines[x][y].setStyleSheet("background-color : #e8e8e8")
+        self.mines[x][y].setText('')
+        self.mines[x][y].setIcon(QIcon())
+
+    def paint_all_mines(self, x: int, y: int):
+        self.mines[x][y].setIcon(self.exploded_mine_icon)
+        self.mines[x][y].setIconSize(QSize(self.tile_size, self.tile_size))
+
+        for mine_x, mine_y in self.game_engine.list_of_mines:
+            if mine_x == x and mine_y == y:
+                continue
+
+            self.mines[mine_x][mine_y].setIcon(self.mine_icon)
+            self.mines[mine_x][mine_y].setIconSize(QSize(self.tile_size - 4, self.tile_size - 4))
+
+    def refresh_tiles(self):
+        self.availableMines.display(self.game_engine.number_of_mines - self.game_engine.checked_as_mine)
+
+        for x in range(9):
+            for y in range(9):
+                value = self.game_engine.board[x, y]
+
+                if value == -93:
+                    self.paint_tile_as_discovered(x, y)
+
+                elif 1 <= value < 9:
+                    self.paint_tile_as_number(x, y, value)
+
+                elif value == -92:
+                    self.paint_tile_as_checked(x, y)
+
+                elif value in [0, -91]:
+                    self.paint_default_tile(x, y)
+
+    def handle_after_action(self, action: ActionGraphic, x: int = -1, y: int = -1):
+        print(self.game_engine)
+        self.refresh_tiles()
+
+        if self.game_engine.game_over:
+            self.timer_stop = True
+
+            if action == ActionGraphic.DISCOVER:
+                self.paint_all_mines(x, y)
+                print(f'You lose!')
+
+            elif self.game_engine.are_all_mines_checked():
+                print('You win!')
 
     def closeEvent(self, a0: QtGui.QCloseEvent):
         self.timer_stop = True
+
+    def reset(self):
+        self.game_engine = MinesweeperGraphic(9)
+        self.timer_stop = False
+        self.thread = None
+        self.time_start = -1
+        self.first_action = True
+        self.refresh_tiles()
+        self.time.display(0)
+        self.availableMines.display(self.game_engine.number_of_mines)
 
 
 if __name__ == '__main__':
@@ -148,6 +261,6 @@ if __name__ == '__main__':
     my_win.show()
 
     mouse_observer = MouseObserver(my_win)
-    mouse_observer.released.connect(my_win.handle_window_released)
+    mouse_observer.pressed.connect(my_win.on_right_click)
 
     sys.exit(app.exec_())

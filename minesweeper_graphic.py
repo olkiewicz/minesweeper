@@ -5,12 +5,12 @@ from enum import Enum
 import numpy as np
 
 
-class Action(Enum):
+class ActionGraphic(Enum):
     CHECK_AS_MINE = 1
     DISCOVER = 2
 
 
-class Minesweeper:
+class MinesweeperGraphic:
     def __init__(self, size: int):
         self.game_over = False
         self.size = size
@@ -18,7 +18,7 @@ class Minesweeper:
         #  0 - nothing, not discovered; -91 - mine;
         # -92 - checked as mine;        -93 nothing, discovered
         self.checked_as_mine = 0
-        self.number_of_mines = 5
+        self.number_of_mines = 10
         self.list_of_mines = []
 
     def add_mines(self, x: int, y: int):
@@ -65,19 +65,19 @@ class Minesweeper:
         self.recalculate_board()
         self.discover(x, y)
 
-    def action(self, x: int, y: int, action: Action):
+    def action(self, x: int, y: int, action: ActionGraphic):
         value = self.board[x, y]
         if value == -93:
             return False
 
-        if action == Action.DISCOVER:
+        if action == ActionGraphic.DISCOVER:
             if value == -91:
                 self.game_over = True
             # elif value == -93:
             else:
                 self.discover(x, y)
 
-        elif action == Action.CHECK_AS_MINE:
+        elif action == ActionGraphic.CHECK_AS_MINE:
             if 1 <= value <= 9:
                 return
 
@@ -88,7 +88,7 @@ class Minesweeper:
                     self.board[x, y] = 0
                 return
 
-            if self.checked_as_mine >= self.size:
+            if self.checked_as_mine >= self.number_of_mines:
                 return False
 
             self.board[x, y] = -92
@@ -101,6 +101,7 @@ class Minesweeper:
     def discover(self, x: int, y: int):
         # FIXME: algorithm has some bugs, but it works
         value = self.board[x, y]
+
         if value == -91:
             self.game_over = True
             return False
@@ -123,17 +124,40 @@ class Minesweeper:
                     continue
 
                 around_value = self.board[x_around, y_around]
+
                 if around_value == 0:
                     self.board[x_around, y_around] = -93
                     self.discover(x_around, y_around)
+
                 elif around_value > 10:
                     self.board[x_around, y_around] -= 10
                     break
 
         self.board[x, y] = -93
 
+    def are_all_mines_checked(self):
+        if self.number_of_mines == self.checked_as_mine:
+            list_of_checked_fields = []
+
+            for x in range(self.size):
+                for y in range(self.size):
+                    value = self.board[x, y]
+
+                    if value == -92:
+                        if (x, y) not in self.list_of_mines:
+                            return False
+
+                        else:
+                            list_of_checked_fields.append((x, y))
+
+            if len(list_of_checked_fields) == self.number_of_mines:
+                return True
+
+        return False
+
     def __str__(self):
-        return self.board.__str__() + '\n\n'  + self.board.__str__().replace('0', '-').replace('-93', '   ').replace('-91', '  -').replace('11', ' -').replace('12', ' -').replace('13', ' -').replace('14', ' -').replace('15', ' -').replace('-92', '  T')
+        return self.board.__str__() + '\n\n'  + self.board.__str__().replace('0', '-').replace('-93', '   ').replace('-91', '  -').replace('11', ' -').replace('12', ' -').replace('13', ' -').replace('14', ' -').replace('15', ' -').replace('-92', '  T')\
+               + f'\n{self.game_over}, num_of_mines={self.checked_as_mine}' + ''.join([f'{mine}' for mine in self.list_of_mines])
         # return self.board.__str__().replace('0', '-').replace('-93', '   ').replace('-91', '   ').replace('11', '  ').replace('12', '  ').replace('13', '  ').replace('14', '  ')
 
     def __repr__(self):
