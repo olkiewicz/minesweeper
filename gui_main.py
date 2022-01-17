@@ -6,7 +6,7 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal, QPoint, QEvent, QRect, QMetaObject, QCoreApplication, QSize
 from PyQt5.QtGui import QIcon, QPixmap, QFont
 from PyQt5.QtWidgets import QStatusBar, QApplication, QMainWindow, QWidget, QGridLayout, QFrame, QLCDNumber, \
-    QPushButton, QMenuBar
+    QPushButton, QMenuBar, QMessageBox
 
 import time
 
@@ -39,6 +39,12 @@ class MouseObserver(PyQt5.QtCore.QObject):
         return super().eventFilter(obj, event)
 
 
+class ResultMessageBox(QMessageBox):
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+        super(ResultMessageBox, self).resizeEvent(event)
+        self.setFixedSize(250, 250)
+
+
 class UiMainWindow(QMainWindow):
 
     def __init__(self):
@@ -51,7 +57,7 @@ class UiMainWindow(QMainWindow):
         if not self.objectName():
             self.setObjectName(u"MainWindow")
 
-        self.resize(700, 700)
+        self.resize(650, 650)
         self.central_widget = QWidget(self)
         self.central_widget.setObjectName(u"centralwidget")
         self.gridLayoutWidget = QWidget(self.central_widget)
@@ -71,13 +77,14 @@ class UiMainWindow(QMainWindow):
 
         self.availableMines = QLCDNumber(self.central_widget)
         self.availableMines.setObjectName(u"availableMines")
-        self.availableMines.setGeometry(QRect(120, 50, 161, 41))
+        self.availableMines.setGeometry(QRect(100, 25, 100, 50))
+        self.availableMines.display(10)
         self.time = QLCDNumber(self.central_widget)
         self.time.setObjectName(u"time")
-        self.time.setGeometry(QRect(530, 50, 161, 41))
+        self.time.setGeometry(QRect(450, 25, 100, 50))
         self.reset_button = QPushButton(self.central_widget)
         self.reset_button.setObjectName(u"reset_button")
-        self.reset_button.setGeometry(QRect(350, 50, 111, 41))
+        self.reset_button.setGeometry(QRect(275, 25, 100, 50))
         self.reset_button.clicked.connect(self.reset)
         self.setCentralWidget(self.central_widget)
         self.menubar = QMenuBar(self)
@@ -228,18 +235,26 @@ class UiMainWindow(QMainWindow):
                     self.paint_default_tile(x, y)
 
     def handle_after_action(self, action: ActionGraphic, x: int = -1, y: int = -1):
-        print(self.game_engine)
         self.refresh_tiles()
 
         if self.game_engine.game_over:
             self.timer_stop = True
 
+            msg = ResultMessageBox()
+            msg.setWindowTitle(' ')
+
             if action == ActionGraphic.DISCOVER:
                 self.paint_all_mines(x, y)
-                print(f'You lose!')
+                self.statusbar.showMessage('You lose')
+                msg.setText('You lose')
+                msg.setIcon(QMessageBox.Critical)
 
             elif self.game_engine.are_all_mines_checked():
-                print('You win!')
+                self.statusbar.showMessage('You win!')
+                msg.setText('You win')
+                msg.setIcon(QMessageBox.Information)
+
+            msg.exec_()
 
     def closeEvent(self, a0: QtGui.QCloseEvent):
         self.timer_stop = True
