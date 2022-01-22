@@ -42,7 +42,8 @@ class MouseObserver(PyQt5.QtCore.QObject):
 class ResultMessageBox(QMessageBox):
     def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
         super(ResultMessageBox, self).resizeEvent(event)
-        self.setFixedSize(250, 250)
+        self.setFixedSize(150, 150)
+        self.setWindowTitle(' ')
 
 
 class UiMainWindow(QMainWindow):
@@ -52,7 +53,7 @@ class UiMainWindow(QMainWindow):
 
         self.tile_size = 50
 
-        self.thread: threading.Thread = None
+        self.thread: threading.Thread = threading.Thread(target=self.timer)
 
         if not self.objectName():
             self.setObjectName(u"MainWindow")
@@ -89,7 +90,7 @@ class UiMainWindow(QMainWindow):
         self.setCentralWidget(self.central_widget)
         self.menubar = QMenuBar(self)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 843, 21))
+        self.menubar.setGeometry(QRect(0, 0, 100, 10))
         self.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(self)
         self.statusbar.setObjectName(u"statusbar")
@@ -102,9 +103,7 @@ class UiMainWindow(QMainWindow):
         self.exploded_mine_icon = QIcon()
         self.exploded_mine_icon.addPixmap(QPixmap('exploded_mine_icon.png'))
 
-        self.retranslateUi(self)
-
-        QMetaObject.connectSlotsByName(self)
+        self.retranslate_ui(self)
 
         self.mines = []
         self.draw_field()
@@ -116,10 +115,9 @@ class UiMainWindow(QMainWindow):
         self.game_engine = MinesweeperGraphic(9)
     # setupUi
 
-    def retranslateUi(self, MainWindow):
+    def retranslate_ui(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.reset_button.setText(QCoreApplication.translate("MainWindow", u"Reset", None))
-    # retranslateUi
 
     def draw_field(self):
         for x in range(9):
@@ -241,7 +239,6 @@ class UiMainWindow(QMainWindow):
             self.timer_stop = True
 
             msg = ResultMessageBox()
-            msg.setWindowTitle(' ')
 
             if action == ActionGraphic.DISCOVER:
                 self.paint_all_mines(x, y)
