@@ -5,6 +5,25 @@ from enum import Enum
 import numpy as np
 
 
+class Field(Enum):
+    NOT_DISCOVERED = 0
+    MINE = -91
+    CHECKED_AS_MINE = -92
+    DISCOVERED = -93
+    ONE_MINE_AROUND = 11
+    TWO_MINES_AROUND = 12
+    THREE_MINES_AROUND = 13
+    FOUR_MINES_AROUND = 14
+    FIVE_MINES_AROUND = 15
+    SIX_MINES_AROUND = 16
+    ONE_MINE_AROUND_DISCOVERED = 1
+    TWO_MINES_AROUND_DISCOVERED = 2
+    THREE_MINES_AROUND_DISCOVERED = 3
+    FOUR_MINES_AROUND_DISCOVERED = 4
+    FIVE_MINES_AROUND_DISCOVERED = 5
+    SIX_MINES_AROUND_DISCOVERED = 6
+
+
 class ActionGraphic(Enum):
     CHECK_AS_MINE = 1
     DISCOVER = 2
@@ -16,7 +35,7 @@ class MinesweeperGraphic:
         self.size = size
         self.board = np.zeros((size, size), dtype=int)
         #  0 - nothing, not discovered; -91 - mine;
-        # -92 - checked as mine;        -93 nothing, discovered
+        # Field.CHECKED_AS_MINE - checked as mine;        -93 nothing, discovered
         self.checked_as_mine = 0
         self.number_of_mines = 10
         self.list_of_mines = []
@@ -34,7 +53,7 @@ class MinesweeperGraphic:
             if math.dist((x, y), (mine_x, mine_y)) <= 3.0 or (mine_x, mine_y) in self.list_of_mines:
                 continue
 
-            self.board[mine_x, mine_y] = -91
+            self.board[mine_x, mine_y] = Field.MINE
             self.list_of_mines.append((mine_x, mine_y))
             _number_of_mines += 1
 
@@ -55,10 +74,10 @@ class MinesweeperGraphic:
                         if x_around == x and y_around == y:
                             continue
 
-                        if self.board[x_around, y_around] == -91:
+                        if self.board[x_around, y_around] == Field.MINE:
                             mines_around += 1
 
-                self.board[x, y] = mines_around + 10 if mines_around > 0 else mines_around
+                self.board[x, y] = Field(mines_around + 10) if mines_around > 0 else Field.NOT_DISCOVERED
 
     def first_action(self, x: int, y: int):
         self.add_mines(x, y)
@@ -67,11 +86,11 @@ class MinesweeperGraphic:
 
     def action(self, x: int, y: int, action: ActionGraphic):
         value = self.board[x, y]
-        if value == -93:
+        if value == Field.DISCOVERED:
             return False
 
         if action == ActionGraphic.DISCOVER:
-            if value == -91:
+            if value == Field.MINE:
                 self.game_over = True
 
             else:
@@ -81,9 +100,9 @@ class MinesweeperGraphic:
             if 1 <= value <= 9:
                 return
 
-            if value == -92:
+            if value == Field.CHECKED_AS_MINE:
                 if (x, y) in self.list_of_mines:
-                    self.board[x, y] = -91
+                    self.board[x, y] = Field.MINE
 
                 else:
                     self.board[x, y] = 0
@@ -92,7 +111,7 @@ class MinesweeperGraphic:
             if self.checked_as_mine >= self.number_of_mines:
                 return False
 
-            self.board[x, y] = -92
+            self.board[x, y] = Field.CHECKED_AS_MINE
             self.checked_as_mine += 1
 
             if self.checked_as_mine == self.number_of_mines and not np.any(self.board == 0) and not np.any(self.board == -91):
@@ -102,15 +121,15 @@ class MinesweeperGraphic:
     def discover(self, x: int, y: int):
         value = self.board[x, y]
 
-        if value == -91:
+        if value == Field.MINE:
             self.game_over = True
             return False
 
-        if value not in [0, -93, 11, 12, 13, 14, 15, 16, 17, 18, 19]:
+        if value.value not in [0, -93, 11, 12, 13, 14, 15, 16, 17, 18, 19]:
             return
 
-        if 10 < value <= 19:
-            self.board[x, y] -= 10
+        if 10 < value.value <= 19:
+            self.board[x, y] -= Field(value.value - 10)
             return
 
         x_min = x - 1 if x > 0 else x
@@ -125,14 +144,14 @@ class MinesweeperGraphic:
 
                 around_value = self.board[x_around, y_around]
 
-                if around_value == 0:
-                    self.board[x_around, y_around] = -93
+                if around_value == Field.NOT_DISCOVERED:
+                    self.board[x_around, y_around] = Field.DISCOVERED
                     self.discover(x_around, y_around)
 
-                elif around_value > 10:
-                    self.board[x_around, y_around] -= 10
+                elif around_value.value > 10:
+                    self.board[x_around, y_around] = Field(around_value.value - 10)
 
-        self.board[x, y] = -93
+        self.board[x, y] = Field.DISCOVERED
 
     def are_all_mines_checked(self):
         if self.number_of_mines == self.checked_as_mine:
@@ -142,7 +161,7 @@ class MinesweeperGraphic:
                 for y in range(self.size):
                     value = self.board[x, y]
 
-                    if value == -92:
+                    if value == Field.CHECKED_AS_MINE:
                         if (x, y) not in self.list_of_mines:
                             return False
 
