@@ -3,7 +3,7 @@ import threading
 
 import PyQt5
 from PyQt5 import QtGui
-from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal, QPoint, QEvent, QRect, QMetaObject, QCoreApplication, QSize
+from PyQt5.QtCore import QObject, pyqtSignal, QPoint, QEvent, QRect, QCoreApplication, QSize
 from PyQt5.QtGui import QIcon, QPixmap, QFont
 from PyQt5.QtWidgets import QStatusBar, QApplication, QMainWindow, QWidget, QGridLayout, QFrame, QLCDNumber, \
     QPushButton, QMenuBar, QMessageBox
@@ -113,7 +113,6 @@ class UiMainWindow(QMainWindow):
 
         self.first_action = True
         self.game_engine = MinesweeperGraphic(9)
-    # setupUi
 
     def retranslate_ui(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
@@ -130,6 +129,7 @@ class UiMainWindow(QMainWindow):
                 push_button.clicked.connect(lambda state, z=x, t=y: self.on_left_click(z, t))
                 self.gridLayout.addWidget(push_button, x, y)
                 row.append(push_button)
+
             self.mines.append(row)
 
     def timer(self):
@@ -192,8 +192,7 @@ class UiMainWindow(QMainWindow):
     def paint_tile_as_number(self, x, y, number: int):
         self.mines[x][y].setStyleSheet("background-color : #c8c8c8")
         font: QFont = self.mines[x][y].font()
-        # font.setPixelSize(font.pixelSize() * 12)
-        # todo: zmienic rozmiar
+        font.setPointSize(24)
         self.mines[x][y].setFont(font)
         self.mines[x][y].setText(f'{number}')
 
@@ -231,6 +230,7 @@ class UiMainWindow(QMainWindow):
 
                 elif value in [0, -91]:
                     self.paint_default_tile(x, y)
+        print(self.game_engine.__str__())
 
     def handle_after_action(self, action: ActionGraphic, x: int = -1, y: int = -1):
         self.refresh_tiles()
@@ -265,6 +265,7 @@ class UiMainWindow(QMainWindow):
         self.refresh_tiles()
         self.time.display(0)
         self.availableMines.display(self.game_engine.number_of_mines)
+        self.statusbar.showMessage('')
 
 
 if __name__ == '__main__':
