@@ -73,7 +73,7 @@ class MinesweeperGraphic:
         if action == ActionGraphic.DISCOVER:
             if value == -91:
                 self.game_over = True
-            # elif value == -93:
+
             else:
                 self.discover(x, y)
 
@@ -84,6 +84,7 @@ class MinesweeperGraphic:
             if value == -92:
                 if (x, y) in self.list_of_mines:
                     self.board[x, y] = -91
+
                 else:
                     self.board[x, y] = 0
                 return
@@ -99,7 +100,6 @@ class MinesweeperGraphic:
                 self.game_over = True
 
     def discover(self, x: int, y: int):
-        # FIXME: algorithm has some bugs, but it works
         value = self.board[x, y]
 
         if value == -91:
@@ -131,7 +131,6 @@ class MinesweeperGraphic:
 
                 elif around_value > 10:
                     self.board[x_around, y_around] -= 10
-                    break
 
         self.board[x, y] = -93
 
@@ -158,7 +157,6 @@ class MinesweeperGraphic:
     def __str__(self):
         return self.board.__str__() + '\n\n'  + self.board.__str__().replace('0', '-').replace('-93', '   ').replace('-91', '  -').replace('11', ' -').replace('12', ' -').replace('13', ' -').replace('14', ' -').replace('15', ' -').replace('-92', '  T')\
                + f'\n{self.game_over}, num_of_mines={self.checked_as_mine}' + ''.join([f'{mine}' for mine in self.list_of_mines])
-        # return self.board.__str__().replace('0', '-').replace('-93', '   ').replace('-91', '   ').replace('11', '  ').replace('12', '  ').replace('13', '  ').replace('14', '  ')
 
     def __repr__(self):
         return self.board.__str__()
