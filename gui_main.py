@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QStatusBar, QApplication, QMainWindow, QWidget, QGri
 
 import time
 
-from minesweeper_graphic import MinesweeperGraphic, ActionGraphic
+from minesweeper_graphic import MinesweeperGraphic, ActionGraphic, Field
 
 
 class MouseObserver(PyQt5.QtCore.QObject):
@@ -167,14 +167,14 @@ class UiMainWindow(QMainWindow):
         x = (window_pos.y() - 100) // self.tile_size
 
         if 0 <= x < 9 and 0 <= y < 9:
-            if self.game_engine.board[x, y] == -92:
+            if self.game_engine.board[x, y] == Field.CHECKED_AS_MINE:
                 self.game_engine.checked_as_mine -= 1
 
                 if (x, y) in self.game_engine.list_of_mines:
-                    self.game_engine.board[x, y] = -91
+                    self.game_engine.board[x, y] = Field.MINE
 
                 else:
-                    self.game_engine.board[x, y] = 0
+                    self.game_engine.board[x, y] = Field.NOT_DISCOVERED
 
             else:
                 self.game_engine.action(x, y, ActionGraphic.CHECK_AS_MINE)
@@ -219,39 +219,42 @@ class UiMainWindow(QMainWindow):
             for y in range(9):
                 value = self.game_engine.board[x, y]
 
-                if value == -93:
+                if value == Field.DISCOVERED:
                     self.paint_tile_as_discovered(x, y)
 
                 elif 1 <= value < 9:
                     self.paint_tile_as_number(x, y, value)
 
-                elif value == -92:
+                elif value == Field.CHECKED_AS_MINE:
                     self.paint_tile_as_checked(x, y)
 
-                elif value in [0, -91]:
+                elif value in [Field.NOT_DISCOVERED, Field.MINE]:
                     self.paint_default_tile(x, y)
         print(self.game_engine.__str__())
 
     def handle_after_action(self, action: ActionGraphic, x: int = -1, y: int = -1):
-        self.refresh_tiles()
+        try:
+            self.refresh_tiles()
 
-        if self.game_engine.game_over:
-            self.timer_stop = True
+            if self.game_engine.game_over:
+                self.timer_stop = True
 
-            msg = ResultMessageBox()
+                msg = ResultMessageBox()
 
-            if action == ActionGraphic.DISCOVER:
-                self.paint_all_mines(x, y)
-                self.statusbar.showMessage('You lose')
-                msg.setText('You lose')
-                msg.setIcon(QMessageBox.Critical)
+                if action == ActionGraphic.DISCOVER:
+                    self.paint_all_mines(x, y)
+                    self.statusbar.showMessage('You lose')
+                    msg.setText('You lose')
+                    msg.setIcon(QMessageBox.Critical)
 
-            elif self.game_engine.are_all_mines_checked():
-                self.statusbar.showMessage('You win!')
-                msg.setText('You win')
-                msg.setIcon(QMessageBox.Information)
+                elif self.game_engine.are_all_mines_checked():
+                    self.statusbar.showMessage('You win!')
+                    msg.setText('You win')
+                    msg.setIcon(QMessageBox.Information)
 
-            msg.exec_()
+                msg.exec_()
+        except BaseException as error:
+            print(error)
 
     def closeEvent(self, a0: QtGui.QCloseEvent):
         self.timer_stop = True
@@ -270,10 +273,10 @@ class UiMainWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    my_win = UiMainWindow()
-    my_win.show()
+    my_window = UiMainWindow()
+    my_window.show()
 
-    mouse_observer = MouseObserver(my_win)
-    mouse_observer.pressed.connect(my_win.on_right_click)
+    mouse_observer = MouseObserver(my_window)
+    mouse_observer.pressed.connect(my_window.on_right_click)
 
     sys.exit(app.exec_())

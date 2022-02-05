@@ -33,7 +33,7 @@ class MinesweeperGraphic:
     def __init__(self, size: int):
         self.game_over = False
         self.size = size
-        self.board = np.zeros((size, size), dtype=int)
+        self.board = np.zeros((size, size), dtype=Field)
         #  0 - nothing, not discovered; -91 - mine;
         # Field.CHECKED_AS_MINE - checked as mine;        -93 nothing, discovered
         self.checked_as_mine = 0
@@ -60,7 +60,7 @@ class MinesweeperGraphic:
     def recalculate_board(self):
         for x in range(self.size):
             for y in range(self.size):
-                if self.board[x, y] == -91:
+                if self.board[x, y] == Field.MINE:
                     continue
 
                 mines_around = 0
@@ -80,9 +80,12 @@ class MinesweeperGraphic:
                 self.board[x, y] = Field(mines_around + 10) if mines_around > 0 else Field.NOT_DISCOVERED
 
     def first_action(self, x: int, y: int):
-        self.add_mines(x, y)
-        self.recalculate_board()
-        self.discover(x, y)
+        try:
+            self.add_mines(x, y)
+            self.recalculate_board()
+            self.discover(x, y)
+        except BaseException as error:
+            print(f':::::: {error}')
 
     def action(self, x: int, y: int, action: ActionGraphic):
         value = self.board[x, y]
@@ -97,7 +100,7 @@ class MinesweeperGraphic:
                 self.discover(x, y)
 
         elif action == ActionGraphic.CHECK_AS_MINE:
-            if 1 <= value <= 9:
+            if Field.ONE_MINE_AROUND_DISCOVERED.value <= value <= Field.SIX_MINES_AROUND_DISCOVERED.value:
                 return
 
             if value == Field.CHECKED_AS_MINE:
@@ -127,7 +130,7 @@ class MinesweeperGraphic:
 
         if value.value not in [0, -93, 11, 12, 13, 14, 15, 16, 17, 18, 19]:
             return
-
+        #
         if 10 < value.value <= 19:
             self.board[x, y] -= Field(value.value - 10)
             return
