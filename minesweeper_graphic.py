@@ -100,7 +100,7 @@ class MinesweeperGraphic:
                 self.discover(x, y)
 
         elif action == ActionGraphic.CHECK_AS_MINE:
-            if Field.ONE_MINE_AROUND_DISCOVERED.value <= value <= Field.SIX_MINES_AROUND_DISCOVERED.value:
+            if Field.ONE_MINE_AROUND_DISCOVERED.value <= value.value <= Field.SIX_MINES_AROUND_DISCOVERED.value:
                 return
 
             if value == Field.CHECKED_AS_MINE:
@@ -117,7 +117,7 @@ class MinesweeperGraphic:
             self.board[x, y] = Field.CHECKED_AS_MINE
             self.checked_as_mine += 1
 
-            if self.checked_as_mine == self.number_of_mines and not np.any(self.board == 0) and not np.any(self.board == -91):
+            if self.checked_as_mine == self.number_of_mines and not np.any(self.board == Field.NOT_DISCOVERED) and not np.any(self.board == Field.MINE):
                 # TODO: maybe we should check if all fields checked as mines are in list self.list_of_mines
                 self.game_over = True
 
@@ -131,7 +131,7 @@ class MinesweeperGraphic:
         if value.value not in [0, -93, 11, 12, 13, 14, 15, 16, 17, 18, 19]:
             return
         #
-        if 10 < value.value <= 19:
+        if Field.ONE_MINE_AROUND.value < value.value <= Field.SIX_MINES_AROUND.value:
             self.board[x, y] -= Field(value.value - 10)
             return
 

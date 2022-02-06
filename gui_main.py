@@ -222,8 +222,8 @@ class UiMainWindow(QMainWindow):
                 if value == Field.DISCOVERED:
                     self.paint_tile_as_discovered(x, y)
 
-                elif 1 <= value < 9:
-                    self.paint_tile_as_number(x, y, value)
+                elif 1 <= value.value < 9:
+                    self.paint_tile_as_number(x, y, value.value)
 
                 elif value == Field.CHECKED_AS_MINE:
                     self.paint_tile_as_checked(x, y)
