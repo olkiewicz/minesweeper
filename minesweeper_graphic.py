@@ -35,7 +35,11 @@ class MinesweeperGraphic:
         self.size = size
         self.board = np.zeros((size, size), dtype=Field)
         #  0 - nothing, not discovered; -91 - mine;
-        # Field.CHECKED_AS_MINE - checked as mine;        -93 nothing, discovered
+        # -92 - checked as mine;        -93 nothing, discovered
+        for x in range(9):
+            for y in range(9):
+                self.board[x, y] = Field.NOT_DISCOVERED
+
         self.checked_as_mine = 0
         self.number_of_mines = 10
         self.list_of_mines = []
@@ -131,8 +135,8 @@ class MinesweeperGraphic:
         if value.value not in [0, -93, 11, 12, 13, 14, 15, 16, 17, 18, 19]:
             return
         #
-        if Field.ONE_MINE_AROUND.value < value.value <= Field.SIX_MINES_AROUND.value:
-            self.board[x, y] -= Field(value.value - 10)
+        if Field.ONE_MINE_AROUND.value <= value.value <= Field.SIX_MINES_AROUND.value:
+            self.board[x, y] = Field(value.value - 10)
             return
 
         x_min = x - 1 if x > 0 else x
@@ -147,7 +151,7 @@ class MinesweeperGraphic:
 
                 around_value = self.board[x_around, y_around]
 
-                if around_value == Field.NOT_DISCOVERED:
+                if around_value == Field.NOT_DISCOVERED :
                     self.board[x_around, y_around] = Field.DISCOVERED
                     self.discover(x_around, y_around)
 

@@ -142,44 +142,51 @@ class UiMainWindow(QMainWindow):
             self.time.display(self.time_start)
 
     def on_left_click(self, a, b):
-        if self.first_action:
-            self.first_action = False
-            self.game_engine.first_action(a, b)
+        try:
+            if self.first_action:
+                self.first_action = False
+                self.game_engine.first_action(a, b)
 
-            if self.thread is None:
-                self.thread = threading.Thread(target=self.timer)
-                self.time_start = 0
-                self.thread.start()
+                if self.thread is None:
+                    self.thread = threading.Thread(target=self.timer)
+                    self.time_start = 0
+                    self.thread.start()
 
-        elif self.game_engine.game_over:
-            return
-
-        else:
-            self.game_engine.action(a, b, ActionGraphic.DISCOVER)
-
-        self.handle_after_action(ActionGraphic.DISCOVER, a, b)
-
-    def on_right_click(self, window_pos: QPoint):
-        if self.first_action or self.game_engine.game_over:
-            return
-
-        y = (window_pos.x() - 100) // self.tile_size
-        x = (window_pos.y() - 100) // self.tile_size
-
-        if 0 <= x < 9 and 0 <= y < 9:
-            if self.game_engine.board[x, y] == Field.CHECKED_AS_MINE:
-                self.game_engine.checked_as_mine -= 1
-
-                if (x, y) in self.game_engine.list_of_mines:
-                    self.game_engine.board[x, y] = Field.MINE
-
-                else:
-                    self.game_engine.board[x, y] = Field.NOT_DISCOVERED
+            elif self.game_engine.game_over:
+                return
 
             else:
-                self.game_engine.action(x, y, ActionGraphic.CHECK_AS_MINE)
+                self.game_engine.action(a, b, ActionGraphic.DISCOVER)
 
-        self.handle_after_action(ActionGraphic.CHECK_AS_MINE)
+            self.handle_after_action(ActionGraphic.DISCOVER, a, b)
+        except BaseException as error:
+            print(f'on_left_click {error}')
+
+
+    def on_right_click(self, window_pos: QPoint):
+        try:
+            if self.first_action or self.game_engine.game_over:
+                return
+
+            y = (window_pos.x() - 100) // self.tile_size
+            x = (window_pos.y() - 100) // self.tile_size
+
+            if 0 <= x < 9 and 0 <= y < 9:
+                if self.game_engine.board[x, y] == Field.CHECKED_AS_MINE:
+                    self.game_engine.checked_as_mine -= 1
+
+                    if (x, y) in self.game_engine.list_of_mines:
+                        self.game_engine.board[x, y] = Field.MINE
+
+                    else:
+                        self.game_engine.board[x, y] = Field.NOT_DISCOVERED
+
+                else:
+                    self.game_engine.action(x, y, ActionGraphic.CHECK_AS_MINE)
+
+            self.handle_after_action(ActionGraphic.CHECK_AS_MINE)
+        except BaseException as error:
+            print(f'on_right_click {error}')
 
     def paint_tile_as_discovered(self, x, y):
         self.mines[x][y].setStyleSheet("background-color : #c8c8c8")
@@ -213,24 +220,32 @@ class UiMainWindow(QMainWindow):
             self.mines[mine_x][mine_y].setIconSize(QSize(self.tile_size - 4, self.tile_size - 4))
 
     def refresh_tiles(self):
-        self.availableMines.display(self.game_engine.number_of_mines - self.game_engine.checked_as_mine)
+        try:
+            self.availableMines.display(self.game_engine.number_of_mines - self.game_engine.checked_as_mine)
 
-        for x in range(9):
-            for y in range(9):
-                value = self.game_engine.board[x, y]
+            for x in range(9):
+                for y in range(9):
+                    value = self.game_engine.board[x, y]
 
-                if value == Field.DISCOVERED:
-                    self.paint_tile_as_discovered(x, y)
+                    if value == 0:
+                        value = Field.NOT_DISCOVERED
+                        self.game_engine.board[x, y] = value
 
-                elif 1 <= value.value < 9:
-                    self.paint_tile_as_number(x, y, value.value)
+                    if value == Field.DISCOVERED:
+                        self.paint_tile_as_discovered(x, y)
 
-                elif value == Field.CHECKED_AS_MINE:
-                    self.paint_tile_as_checked(x, y)
+                    elif 1 <= value.value < 9:
+                        self.paint_tile_as_number(x, y, value.value)
 
-                elif value in [Field.NOT_DISCOVERED, Field.MINE]:
-                    self.paint_default_tile(x, y)
-        print(self.game_engine.__str__())
+                    elif value == Field.CHECKED_AS_MINE:
+                        self.paint_tile_as_checked(x, y)
+
+                    elif value in [Field.NOT_DISCOVERED, Field.MINE]:
+                        self.paint_default_tile(x, y)
+            # print(self.game_engine.__str__())
+        except BaseException as error:
+            print(f'refresh_tiles: {error}')
+
 
     def handle_after_action(self, action: ActionGraphic, x: int = -1, y: int = -1):
         try:
@@ -254,7 +269,7 @@ class UiMainWindow(QMainWindow):
 
                 msg.exec_()
         except BaseException as error:
-            print(error)
+            print(f'handle_after_action {error}')
 
     def closeEvent(self, a0: QtGui.QCloseEvent):
         self.timer_stop = True
@@ -269,6 +284,7 @@ class UiMainWindow(QMainWindow):
         self.time.display(0)
         self.availableMines.display(self.game_engine.number_of_mines)
         self.statusbar.showMessage('')
+
 
 
 if __name__ == '__main__':
