@@ -88,12 +88,9 @@ class MinesweeperGraphic:
                 self.board[x, y] = Field(mines_around + 10) if mines_around > 0 else Field.NOT_DISCOVERED
 
     def first_action(self, x: int, y: int):
-        try:
-            self.add_mines(x, y)
-            self.recalculate_board()
-            self.discover(x, y)
-        except BaseException as error:
-            print(f':::::: {error}')
+        self.add_mines(x, y)
+        self.recalculate_board()
+        self.discover(x, y)
 
     def action(self, x: int, y: int, action: ActionGraphic):
         value = self.board[x, y]
@@ -118,13 +115,9 @@ class MinesweeperGraphic:
                     self.board[x, y] = Field.MINE
 
                 else:
-                    # if (x, y) in self.checked_fields.keys():
-                        # x1 = self.checked_fields[(x, y)]
-                        # print(f'XXXX: {len(self.checked_fields.keys())}, {x1}')
-                        # self.board[x, y] = x1
-                        # self.checked_fields.pop((x, y))
-                        # print(f'XXXX: {len(self.checked_fields.keys())}')
-                    self.board[x, y] = Field.NOT_DISCOVERED
+                    if (x, y) in self.checked_fields.keys():
+                        self.board[x, y] = self.checked_fields[(x, y)]
+                        self.checked_fields.pop((x, y))
                 return
 
             self.checked_fields[(x, y)] = value
@@ -135,7 +128,6 @@ class MinesweeperGraphic:
             self.checked_as_mine += 1
 
             if self.checked_as_mine == self.number_of_mines and not np.any(self.board == Field.NOT_DISCOVERED) and not np.any(self.board == Field.MINE):
-                # TODO: maybe we should check if all fields checked as mines are in list self.list_of_mines
                 self.game_over = True
 
     def discover(self, x: int, y: int):
