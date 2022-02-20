@@ -23,6 +23,9 @@ class Field(Enum):
     FIVE_MINES_AROUND_DISCOVERED = 5
     SIX_MINES_AROUND_DISCOVERED = 6
 
+    def __str__(self):
+        return f'{self.value}'
+
 
 class ActionGraphic(Enum):
     CHECK_AS_MINE = 1
@@ -43,6 +46,7 @@ class MinesweeperGraphic:
         self.checked_as_mine = 0
         self.number_of_mines = 10
         self.list_of_mines = []
+        self.checked_fields = {}
 
     def add_mines(self, x: int, y: int):
         _number_of_mines = 0
@@ -104,17 +108,26 @@ class MinesweeperGraphic:
                 self.discover(x, y)
 
         elif action == ActionGraphic.CHECK_AS_MINE:
-            if Field.ONE_MINE_AROUND_DISCOVERED.value <= value.value <= Field.SIX_MINES_AROUND_DISCOVERED.value:
+            if 1 <= value.value <= 9:
                 return
 
             if value == Field.CHECKED_AS_MINE:
+                self.checked_as_mine -= 1
+
                 if (x, y) in self.list_of_mines:
                     self.board[x, y] = Field.MINE
 
                 else:
-                    self.board[x, y] = 0
+                    # if (x, y) in self.checked_fields.keys():
+                        # x1 = self.checked_fields[(x, y)]
+                        # print(f'XXXX: {len(self.checked_fields.keys())}, {x1}')
+                        # self.board[x, y] = x1
+                        # self.checked_fields.pop((x, y))
+                        # print(f'XXXX: {len(self.checked_fields.keys())}')
+                    self.board[x, y] = Field.NOT_DISCOVERED
                 return
 
+            self.checked_fields[(x, y)] = value
             if self.checked_as_mine >= self.number_of_mines:
                 return False
 
@@ -134,7 +147,7 @@ class MinesweeperGraphic:
 
         if value.value not in [0, -93, 11, 12, 13, 14, 15, 16, 17, 18, 19]:
             return
-        #
+
         if Field.ONE_MINE_AROUND.value <= value.value <= Field.SIX_MINES_AROUND.value:
             self.board[x, y] = Field(value.value - 10)
             return
@@ -151,7 +164,7 @@ class MinesweeperGraphic:
 
                 around_value = self.board[x_around, y_around]
 
-                if around_value == Field.NOT_DISCOVERED :
+                if around_value == Field.NOT_DISCOVERED:
                     self.board[x_around, y_around] = Field.DISCOVERED
                     self.discover(x_around, y_around)
 
