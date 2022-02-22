@@ -23,8 +23,12 @@ class Field(Enum):
     FIVE_MINES_AROUND_DISCOVERED = 5
     SIX_MINES_AROUND_DISCOVERED = 6
 
-    def __str__(self):
-        return f'{self.value}'
+    @staticmethod
+    def discover(field):
+        try:
+            return Field(field.value - 10)
+        except BaseException as e:
+            print(f'31: {e}')
 
 
 class ActionGraphic(Enum):
@@ -37,8 +41,6 @@ class MinesweeperGraphic:
         self.game_over = False
         self.size = size
         self.board = np.zeros((size, size), dtype=Field)
-        #  0 - nothing, not discovered; -91 - mine;
-        # -92 - checked as mine;        -93 nothing, discovered
         for x in range(9):
             for y in range(9):
                 self.board[x, y] = Field.NOT_DISCOVERED
@@ -131,17 +133,17 @@ class MinesweeperGraphic:
                 self.game_over = True
 
     def discover(self, x: int, y: int):
-        value = self.board[x, y]
+        value: Field = self.board[x, y]
 
         if value == Field.MINE:
             self.game_over = True
             return False
 
-        if value.value not in [0, -93, 11, 12, 13, 14, 15, 16, 17, 18, 19]:
+        if value not in [Field.NOT_DISCOVERED, Field.DISCOVERED, Field.ONE_MINE_AROUND, Field.TWO_MINES_AROUND, Field.THREE_MINES_AROUND, Field.FOUR_MINES_AROUND, Field.FIVE_MINES_AROUND, Field.SIX_MINES_AROUND]:
             return
 
         if Field.ONE_MINE_AROUND.value <= value.value <= Field.SIX_MINES_AROUND.value:
-            self.board[x, y] = Field(value.value - 10)
+            self.board[x, y] = Field.discover(value)
             return
 
         x_min = x - 1 if x > 0 else x
@@ -161,7 +163,8 @@ class MinesweeperGraphic:
                     self.discover(x_around, y_around)
 
                 elif around_value.value > 10:
-                    self.board[x_around, y_around] = Field(around_value.value - 10)
+                # elif around_value.value >= Field.ONE_MINE_AROUND:
+                    self.board[x_around, y_around] = Field.discover(around_value)
 
         self.board[x, y] = Field.DISCOVERED
 
@@ -186,8 +189,7 @@ class MinesweeperGraphic:
         return False
 
     def __str__(self):
-        return self.board.__str__() + '\n\n'  + self.board.__str__().replace('0', '-').replace('-93', '   ').replace('-91', '  -').replace('11', ' -').replace('12', ' -').replace('13', ' -').replace('14', ' -').replace('15', ' -').replace('-92', '  T')\
-               + f'\n{self.game_over}, num_of_mines={self.checked_as_mine}' + ''.join([f'{mine}' for mine in self.list_of_mines])
+        return self.board.__str__()
 
     def __repr__(self):
         return self.board.__str__()
