@@ -25,10 +25,7 @@ class Field(Enum):
 
     @staticmethod
     def discover(field):
-        try:
-            return Field(field.value - 10)
-        except BaseException as e:
-            print(f'31: {e}')
+        return Field(field.value - 10)
 
 
 class ActionGraphic(Enum):
@@ -108,7 +105,6 @@ class MinesweeperGraphic:
 
         elif action == ActionGraphic.CHECK_AS_MINE:
             if Field.ONE_MINE_AROUND_DISCOVERED.value <= value.value <= Field.SIX_MINES_AROUND_DISCOVERED.value:
-            # if 1 <= value.value <= 9:
                 return
 
             if value == Field.CHECKED_AS_MINE:

@@ -212,10 +212,6 @@ class UiMainWindow(QMainWindow):
             for y in range(9):
                 value = self.game_engine.board[x, y]
 
-                if value == 0:
-                    value = Field.NOT_DISCOVERED
-                    self.game_engine.board[x, y] = value
-
                 if value == Field.DISCOVERED:
                     self.paint_tile_as_discovered(x, y)
 
