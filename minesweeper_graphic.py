@@ -107,7 +107,8 @@ class MinesweeperGraphic:
                 self.discover(x, y)
 
         elif action == ActionGraphic.CHECK_AS_MINE:
-            if 1 <= value.value <= 9:
+            if Field.ONE_MINE_AROUND_DISCOVERED.value <= value.value <= Field.SIX_MINES_AROUND_DISCOVERED.value:
+            # if 1 <= value.value <= 9:
                 return
 
             if value == Field.CHECKED_AS_MINE:
@@ -162,8 +163,7 @@ class MinesweeperGraphic:
                     self.board[x_around, y_around] = Field.DISCOVERED
                     self.discover(x_around, y_around)
 
-                elif around_value.value > 10:
-                # elif around_value.value >= Field.ONE_MINE_AROUND:
+                elif around_value.value >= Field.ONE_MINE_AROUND.value:
                     self.board[x_around, y_around] = Field.discover(around_value)
 
         self.board[x, y] = Field.DISCOVERED

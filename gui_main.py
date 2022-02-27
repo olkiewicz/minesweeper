@@ -237,13 +237,11 @@ class UiMainWindow(QMainWindow):
 
             if action == ActionGraphic.DISCOVER:
                 self.paint_all_mines(x, y)
-                self.statusbar.showMessage('You lose')
-                msg.setText('You lose')
+                msg.setText('You lose!')
                 msg.setIcon(QMessageBox.Critical)
 
             elif self.game_engine.are_all_mines_checked():
-                self.statusbar.showMessage('You win!')
-                msg.setText('You win')
+                msg.setText('You win!')
                 msg.setIcon(QMessageBox.Information)
 
             msg.exec_()
